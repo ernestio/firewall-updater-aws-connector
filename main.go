@@ -26,7 +26,6 @@ func eventHandler(m *nats.Msg) {
 
 	err := f.Process(m.Data)
 	if err != nil {
-		nc.Publish("firewall.update.aws.error", m.Data)
 		return
 	}
 

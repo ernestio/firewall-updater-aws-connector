@@ -30,7 +30,7 @@ type rule struct {
 	Protocol string `json:"protocol"`
 }
 
-// Event stores the network create data
+// Event stores the firewall data
 type Event struct {
 	ID                    string `json:"id"`
 	DatacenterVPCID       string `json:"datacenter_vpc_id"`
