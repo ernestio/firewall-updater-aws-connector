@@ -45,7 +45,7 @@ func buildRevokePermissions(old, new []*ec2.IpPermission) []*ec2.IpPermission {
 	return revoked
 }
 
-func removeExistingRules(rules []*ec2.IpPermission, old []*ec2.IpPermission) []*ec2.IpPermission {
+func deduplicateRules(rules, old []*ec2.IpPermission) []*ec2.IpPermission {
 	for i, rule := range rules {
 		if ruleExists(rule, old) {
 			rules = append(rules[:i], rules[i+1:]...)

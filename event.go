@@ -14,12 +14,13 @@ var (
 	ErrDatacenterIDInvalid          = errors.New("Datacenter VPC ID invalid")
 	ErrDatacenterRegionInvalid      = errors.New("Datacenter Region invalid")
 	ErrDatacenterCredentialsInvalid = errors.New("Datacenter credentials invalid")
+	ErrSGAWSIDInvalid               = errors.New("Security Group aws id invalid")
 	ErrSGNameInvalid                = errors.New("Security Group name invalid")
 	ErrSGRulesInvalid               = errors.New("Security Group must contain rules")
 	ErrSGRuleIPInvalid              = errors.New("Security Group rule ip invalid")
 	ErrSGRuleProtocolInvalid        = errors.New("Security Group rule protocol invalid")
 	ErrSGRuleFromPortInvalid        = errors.New("Security Group rule from port invalid")
-	ErrSGRuleToPortInvalid          = errors.New("Security Group to port invalid")
+	ErrSGRuleToPortInvalid          = errors.New("Security Group rule to port invalid")
 )
 
 type rule struct {
@@ -60,6 +61,10 @@ func (ev *Event) Validate() error {
 		return ErrDatacenterCredentialsInvalid
 	}
 
+	if ev.SecurityGroupAWSID == "" {
+		return ErrSGAWSIDInvalid
+	}
+
 	if ev.SecurityGroupName == "" {
 		return ErrSGNameInvalid
 	}
@@ -83,7 +88,31 @@ func (ev *Event) Validate() error {
 		}
 	}
 
+	for _, rule := range ev.SecurityGroupRules.Egress {
+		if rule.IP == "" {
+			return ErrSGRuleIPInvalid
+		}
+		if rule.Protocol == "" {
+			return ErrSGRuleProtocolInvalid
+		}
+		if rule.FromPort < 1 || rule.FromPort > 65535 {
+			return ErrSGRuleFromPortInvalid
+		}
+		if rule.ToPort < 1 || rule.ToPort > 65535 {
+			return ErrSGRuleToPortInvalid
+		}
+	}
+
 	return nil
+}
+
+// Process the raw event
+func (ev *Event) Process(data []byte) error {
+	err := json.Unmarshal(data, &ev)
+	if err != nil {
+		nc.Publish("firewall.update.aws.error", data)
+	}
+	return err
 }
 
 // Error the request
