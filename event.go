@@ -6,7 +6,20 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
+)
+
+var (
+	ErrDatacenterIDInvalid          = errors.New("Datacenter VPC ID invalid")
+	ErrDatacenterRegionInvalid      = errors.New("Datacenter Region invalid")
+	ErrDatacenterCredentialsInvalid = errors.New("Datacenter credentials invalid")
+	ErrSGNameInvalid                = errors.New("Security Group name invalid")
+	ErrSGRulesInvalid               = errors.New("Security Group must contain rules")
+	ErrSGRuleIPInvalid              = errors.New("Security Group rule ip invalid")
+	ErrSGRuleProtocolInvalid        = errors.New("Security Group rule protocol invalid")
+	ErrSGRuleFromPortInvalid        = errors.New("Security Group rule from port invalid")
+	ErrSGRuleToPortInvalid          = errors.New("Security Group to port invalid")
 )
 
 type rule struct {
@@ -33,9 +46,44 @@ type Event struct {
 	ErrorMessage string `json:"error,omitempty"`
 }
 
-// Valid checks if all criteria are met
-func (ev *Event) Valid() bool {
-	return true
+// Validate checks if all criteria are met
+func (ev *Event) Validate() error {
+	if ev.DatacenterVPCID == "" {
+		return ErrDatacenterIDInvalid
+	}
+
+	if ev.DatacenterRegion == "" {
+		return ErrDatacenterRegionInvalid
+	}
+
+	if ev.DatacenterAccessKey == "" || ev.DatacenterAccessToken == "" {
+		return ErrDatacenterCredentialsInvalid
+	}
+
+	if ev.SecurityGroupName == "" {
+		return ErrSGNameInvalid
+	}
+
+	if len(ev.SecurityGroupRules.Egress) < 1 && len(ev.SecurityGroupRules.Egress) < 1 {
+		return ErrSGRulesInvalid
+	}
+
+	for _, rule := range ev.SecurityGroupRules.Ingress {
+		if rule.IP == "" {
+			return ErrSGRuleIPInvalid
+		}
+		if rule.Protocol == "" {
+			return ErrSGRuleProtocolInvalid
+		}
+		if rule.FromPort < 1 || rule.FromPort > 65535 {
+			return ErrSGRuleFromPortInvalid
+		}
+		if rule.ToPort < 1 || rule.ToPort > 65535 {
+			return ErrSGRuleToPortInvalid
+		}
+	}
+
+	return nil
 }
 
 // Error the request

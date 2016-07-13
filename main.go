@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"reflect"
 	"runtime"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -36,8 +35,8 @@ func eventHandler(m *nats.Msg) {
 		return
 	}
 
-	if f.Valid() == false {
-		f.Error(errors.New("Security Group is invalid"))
+	if err = f.Validate(); err != nil {
+		f.Error(err)
 		return
 	}
 
@@ -48,40 +47,6 @@ func eventHandler(m *nats.Msg) {
 	}
 
 	f.Complete()
-}
-
-func ruleExists(rule *ec2.IpPermission, ruleset []*ec2.IpPermission) bool {
-	for _, r := range ruleset {
-		if reflect.DeepEqual(*r, *rule) {
-			return true
-		}
-	}
-	return false
-}
-
-func buildPermissions(rules []rule) []*ec2.IpPermission {
-	var perms []*ec2.IpPermission
-	for _, rule := range rules {
-		p := ec2.IpPermission{
-			FromPort:   aws.Int64(rule.FromPort),
-			ToPort:     aws.Int64(rule.ToPort),
-			IpProtocol: aws.String(rule.Protocol),
-		}
-		ip := ec2.IpRange{CidrIp: aws.String(rule.IP)}
-		p.IpRanges = append(p.IpRanges, &ip)
-		perms = append(perms, &p)
-	}
-	return perms
-}
-
-func buildRevokePermissions(old, new []*ec2.IpPermission) []*ec2.IpPermission {
-	var revoked []*ec2.IpPermission
-	for _, rule := range old {
-		if ruleExists(rule, new) != true {
-			revoked = append(revoked, rule)
-		}
-	}
-	return revoked
 }
 
 func securityGroupByID(svc *ec2.EC2, id string) (*ec2.SecurityGroup, error) {
@@ -105,15 +70,6 @@ func securityGroupByID(svc *ec2.EC2, id string) (*ec2.SecurityGroup, error) {
 	return resp.SecurityGroups[0], nil
 }
 
-func removeExistingRules(rules []*ec2.IpPermission, old []*ec2.IpPermission) []*ec2.IpPermission {
-	for i, rule := range rules {
-		if ruleExists(rule, old) {
-			rules = append(rules[:i], rules[i+1:]...)
-		}
-	}
-	return rules
-}
-
 func updateFirewall(ev *Event) error {
 	creds := credentials.NewStaticCredentials(ev.DatacenterAccessKey, ev.DatacenterAccessToken, "")
 	svc := ec2.New(session.New(), &aws.Config{
@@ -126,10 +82,15 @@ func updateFirewall(ev *Event) error {
 		return err
 	}
 
+	// generate the new rulesets
 	newIngressRules := buildPermissions(ev.SecurityGroupRules.Ingress)
 	newEgressRules := buildPermissions(ev.SecurityGroupRules.Egress)
+
+	// generate the rules to remove
 	revokeIngressRules := buildRevokePermissions(sg.IpPermissions, newIngressRules)
 	revokeEgressRules := buildRevokePermissions(sg.IpPermissionsEgress, newEgressRules)
+
+	// remove already existing rules from the new ruleset
 	newIngressRules = removeExistingRules(newIngressRules, sg.IpPermissions)
 	newEgressRules = removeExistingRules(newEgressRules, sg.IpPermissionsEgress)
 
