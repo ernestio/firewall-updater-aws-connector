@@ -32,7 +32,9 @@ type rule struct {
 
 // Event stores the firewall data
 type Event struct {
-	ID                    string `json:"id"`
+	UUID                  string `json:"_uuid"`
+	BatchID               string `json:"_batch_id"`
+	ProviderType          string `json:"_type"`
 	DatacenterVPCID       string `json:"datacenter_vpc_id"`
 	DatacenterRegion      string `json:"datacenter_region"`
 	DatacenterAccessKey   string `json:"datacenter_access_key"`
