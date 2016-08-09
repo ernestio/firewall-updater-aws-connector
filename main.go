@@ -7,7 +7,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"runtime"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	ecc "github.com/ernestio/ernest-config-client"
 	"github.com/nats-io/nats"
 )
 
@@ -143,15 +143,7 @@ func updateFirewall(ev *Event) error {
 }
 
 func main() {
-	natsURI := os.Getenv("NATS_URI")
-	if natsURI == "" {
-		natsURI = nats.DefaultURL
-	}
-
-	nc, natsErr = nats.Connect(natsURI)
-	if natsErr != nil {
-		log.Fatal(natsErr)
-	}
+	nc = ecc.NewConfig(os.Getenv("NATS_URI")).Nats()
 
 	fmt.Println("listening for firewall.update.aws")
 	nc.Subscribe("firewall.update.aws", eventHandler)
