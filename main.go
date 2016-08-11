@@ -77,8 +77,8 @@ func updateFirewall(ev *Event) error {
 	}
 
 	// generate the new rulesets
-	newIngressRules := buildPermissions(ev.Rules("ingress"))
-	newEgressRules := buildPermissions(ev.Rules("egress"))
+	newIngressRules := buildPermissions(ev.SecurityGroupRules.Ingress)
+	newEgressRules := buildPermissions(ev.SecurityGroupRules.Egress)
 
 	// generate the rules to remove
 	revokeIngressRules := buildRevokePermissions(sg.IpPermissions, newIngressRules)

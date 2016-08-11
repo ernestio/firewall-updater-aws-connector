@@ -55,7 +55,7 @@ func TestRuleset(t *testing.T) {
 
 	Convey("Given an ruleset", t, func() {
 		Convey("When mapping to IpPermissions", func() {
-			ruleset := buildPermissions(ev.Rules("ingress"))
+			ruleset := buildPermissions(ev.SecurityGroupRules.Ingress)
 			Convey("It should produce the correct output", func() {
 				So(len(ruleset), ShouldEqual, 1)
 				So(*ruleset[0].IpRanges[0].CidrIp, ShouldEqual, "10.0.10.100/32")

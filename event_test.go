@@ -55,18 +55,17 @@ func testSetup() (chan *nats.Msg, chan *nats.Msg) {
 }
 
 func buildTestRules(ev *Event) {
-	ev.SecurityGroupRules = []rule{}
+	ev.SecurityGroupRules.Ingress = []rule{}
+	ev.SecurityGroupRules.Egress = []rule{}
 
-	ev.SecurityGroupRules = append(ev.SecurityGroupRules, rule{
-		Type:     "ingress",
+	ev.SecurityGroupRules.Ingress = append(ev.SecurityGroupRules.Ingress, rule{
 		IP:       "10.0.10.100/32",
 		FromPort: 80,
 		ToPort:   8080,
 		Protocol: "tcp",
 	})
 
-	ev.SecurityGroupRules = append(ev.SecurityGroupRules, rule{
-		Type:     "egress",
+	ev.SecurityGroupRules.Egress = append(ev.SecurityGroupRules.Egress, rule{
 		IP:       "8.8.8.8/32",
 		FromPort: 80,
 		ToPort:   8080,
@@ -101,15 +100,16 @@ func TestEvent(t *testing.T) {
 					So(e.DatacenterAccessKey, ShouldEqual, "key")
 					So(e.DatacenterAccessToken, ShouldEqual, "token")
 					So(e.SecurityGroupName, ShouldEqual, "test")
-					So(len(e.SecurityGroupRules), ShouldEqual, 2)
-					So(e.SecurityGroupRules[0].IP, ShouldEqual, "10.0.10.100/32")
-					So(e.SecurityGroupRules[0].FromPort, ShouldEqual, 80)
-					So(e.SecurityGroupRules[0].ToPort, ShouldEqual, 8080)
-					So(e.SecurityGroupRules[0].Protocol, ShouldEqual, "tcp")
-					So(e.SecurityGroupRules[1].IP, ShouldEqual, "8.8.8.8/32")
-					So(e.SecurityGroupRules[1].FromPort, ShouldEqual, 80)
-					So(e.SecurityGroupRules[1].ToPort, ShouldEqual, 8080)
-					So(e.SecurityGroupRules[1].Protocol, ShouldEqual, "tcp")
+					So(len(e.SecurityGroupRules.Ingress), ShouldEqual, 1)
+					So(e.SecurityGroupRules.Ingress[0].IP, ShouldEqual, "10.0.10.100/32")
+					So(e.SecurityGroupRules.Ingress[0].FromPort, ShouldEqual, 80)
+					So(e.SecurityGroupRules.Ingress[0].ToPort, ShouldEqual, 8080)
+					So(e.SecurityGroupRules.Ingress[0].Protocol, ShouldEqual, "tcp")
+					So(len(e.SecurityGroupRules.Egress), ShouldEqual, 1)
+					So(e.SecurityGroupRules.Egress[0].IP, ShouldEqual, "8.8.8.8/32")
+					So(e.SecurityGroupRules.Egress[0].FromPort, ShouldEqual, 80)
+					So(e.SecurityGroupRules.Egress[0].ToPort, ShouldEqual, 8080)
+					So(e.SecurityGroupRules.Egress[0].Protocol, ShouldEqual, "tcp")
 				})
 			})
 
@@ -241,7 +241,8 @@ func TestEvent(t *testing.T) {
 
 		Convey("With an empty ruleset", func() {
 			testEventInvalid := testEvent
-			testEventInvalid.SecurityGroupRules = []rule{}
+			testEventInvalid.SecurityGroupRules.Ingress = []rule{}
+			testEventInvalid.SecurityGroupRules.Egress = []rule{}
 			invalid, _ := json.Marshal(testEventInvalid)
 
 			Convey("When validating the event", func() {
@@ -258,7 +259,7 @@ func TestEvent(t *testing.T) {
 		Convey("With an invalid ingress rule ip", func() {
 			testEventInvalid := testEvent
 			buildTestRules(&testEventInvalid)
-			testEventInvalid.SecurityGroupRules[0].IP = ""
+			testEventInvalid.SecurityGroupRules.Ingress[0].IP = ""
 			invalid, _ := json.Marshal(testEventInvalid)
 
 			Convey("When validating the event", func() {
@@ -275,7 +276,7 @@ func TestEvent(t *testing.T) {
 		Convey("With an invalid ingress rule from port", func() {
 			testEventInvalid := testEvent
 			buildTestRules(&testEventInvalid)
-			testEventInvalid.SecurityGroupRules[0].FromPort = 999999
+			testEventInvalid.SecurityGroupRules.Ingress[0].FromPort = 999999
 			invalid, _ := json.Marshal(testEventInvalid)
 
 			Convey("When validating the event", func() {
@@ -292,7 +293,7 @@ func TestEvent(t *testing.T) {
 		Convey("With an invalid ingress rule to port", func() {
 			testEventInvalid := testEvent
 			buildTestRules(&testEventInvalid)
-			testEventInvalid.SecurityGroupRules[0].ToPort = -99999
+			testEventInvalid.SecurityGroupRules.Ingress[0].ToPort = -99999
 			invalid, _ := json.Marshal(testEventInvalid)
 
 			Convey("When validating the event", func() {
@@ -309,7 +310,7 @@ func TestEvent(t *testing.T) {
 		Convey("With an invalid ingress rule protocol", func() {
 			testEventInvalid := testEvent
 			buildTestRules(&testEventInvalid)
-			testEventInvalid.SecurityGroupRules[0].Protocol = ""
+			testEventInvalid.SecurityGroupRules.Ingress[0].Protocol = ""
 			invalid, _ := json.Marshal(testEventInvalid)
 
 			Convey("When validating the event", func() {
@@ -326,7 +327,7 @@ func TestEvent(t *testing.T) {
 		Convey("With an invalid egress rule ip", func() {
 			testEventInvalid := testEvent
 			buildTestRules(&testEventInvalid)
-			testEventInvalid.SecurityGroupRules[0].IP = ""
+			testEventInvalid.SecurityGroupRules.Egress[0].IP = ""
 			invalid, _ := json.Marshal(testEventInvalid)
 
 			Convey("When validating the event", func() {
@@ -343,7 +344,7 @@ func TestEvent(t *testing.T) {
 		Convey("With an invalid egress rule from port", func() {
 			testEventInvalid := testEvent
 			buildTestRules(&testEventInvalid)
-			testEventInvalid.SecurityGroupRules[0].FromPort = 999999
+			testEventInvalid.SecurityGroupRules.Egress[0].FromPort = 999999
 			invalid, _ := json.Marshal(testEventInvalid)
 
 			Convey("When validating the event", func() {
@@ -360,7 +361,7 @@ func TestEvent(t *testing.T) {
 		Convey("With an invalid egress rule to port", func() {
 			testEventInvalid := testEvent
 			buildTestRules(&testEventInvalid)
-			testEventInvalid.SecurityGroupRules[0].ToPort = -99999
+			testEventInvalid.SecurityGroupRules.Egress[0].ToPort = -99999
 			invalid, _ := json.Marshal(testEventInvalid)
 
 			Convey("When validating the event", func() {
@@ -377,7 +378,7 @@ func TestEvent(t *testing.T) {
 		Convey("With an invalid egress rule protocol", func() {
 			testEventInvalid := testEvent
 			buildTestRules(&testEventInvalid)
-			testEventInvalid.SecurityGroupRules[0].Protocol = ""
+			testEventInvalid.SecurityGroupRules.Egress[0].Protocol = ""
 			invalid, _ := json.Marshal(testEventInvalid)
 
 			Convey("When validating the event", func() {
