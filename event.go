@@ -17,6 +17,7 @@ var (
 	ErrSGAWSIDInvalid               = errors.New("Security Group aws id invalid")
 	ErrSGNameInvalid                = errors.New("Security Group name invalid")
 	ErrSGRulesInvalid               = errors.New("Security Group must contain rules")
+	ErrSGRuleTypeInvalid            = errors.New("Security Group rule type invalid")
 	ErrSGRuleIPInvalid              = errors.New("Security Group rule ip invalid")
 	ErrSGRuleProtocolInvalid        = errors.New("Security Group rule protocol invalid")
 	ErrSGRuleFromPortInvalid        = errors.New("Security Group rule from port invalid")
@@ -24,9 +25,10 @@ var (
 )
 
 type rule struct {
-	IP       string `json:"ip"`
-	FromPort int64  `json:"from_port"`
-	ToPort   int64  `json:"to_port"`
+	Type     string `json:"type"`
+	IP       string `json:"source_ip"`
+	FromPort int64  `json:"source_port"`
+	ToPort   int64  `json:"destination_port"`
 	Protocol string `json:"protocol"`
 }
 
@@ -41,12 +43,22 @@ type Event struct {
 	DatacenterAccessToken string `json:"datacenter_access_token"`
 	NetworkAWSID          string `json:"network_aws_id"`
 	SecurityGroupAWSID    string `json:"security_group_aws_id,omitempty"`
-	SecurityGroupName     string `json:"security_group_name"`
-	SecurityGroupRules    struct {
-		Ingress []rule `json:"ingress"`
-		Egress  []rule `json:"egress"`
-	} `json:"security_group_rules"`
-	ErrorMessage string `json:"error,omitempty"`
+	SecurityGroupName     string `json:"name"`
+	SecurityGroupRules    []rule `json:"rules"`
+	ErrorMessage          string `json:"error,omitempty"`
+}
+
+// Rules returns a ruleset that matches a corresponding type
+func (ev *Event) Rules(t string) []rule {
+	var rules []rule
+
+	for _, rule := range ev.SecurityGroupRules {
+		if rule.Type == t {
+			rules = append(rules, rule)
+		}
+	}
+
+	return rules
 }
 
 // Validate checks if all criteria are met
@@ -71,26 +83,14 @@ func (ev *Event) Validate() error {
 		return ErrSGNameInvalid
 	}
 
-	if len(ev.SecurityGroupRules.Egress) < 1 && len(ev.SecurityGroupRules.Egress) < 1 {
+	if len(ev.SecurityGroupRules) < 1 {
 		return ErrSGRulesInvalid
 	}
 
-	for _, rule := range ev.SecurityGroupRules.Ingress {
-		if rule.IP == "" {
-			return ErrSGRuleIPInvalid
+	for _, rule := range ev.SecurityGroupRules {
+		if rule.Type == "" {
+			return ErrSGRuleTypeInvalid
 		}
-		if rule.Protocol == "" {
-			return ErrSGRuleProtocolInvalid
-		}
-		if rule.FromPort < 1 || rule.FromPort > 65535 {
-			return ErrSGRuleFromPortInvalid
-		}
-		if rule.ToPort < 1 || rule.ToPort > 65535 {
-			return ErrSGRuleToPortInvalid
-		}
-	}
-
-	for _, rule := range ev.SecurityGroupRules.Egress {
 		if rule.IP == "" {
 			return ErrSGRuleIPInvalid
 		}
