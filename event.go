@@ -82,10 +82,10 @@ func (ev *Event) Validate() error {
 		if rule.Protocol == "" {
 			return ErrSGRuleProtocolInvalid
 		}
-		if rule.FromPort < 1 || rule.FromPort > 65535 {
+		if rule.FromPort < 0 || rule.FromPort > 65535 {
 			return ErrSGRuleFromPortInvalid
 		}
-		if rule.ToPort < 1 || rule.ToPort > 65535 {
+		if rule.ToPort < 0 || rule.ToPort > 65535 {
 			return ErrSGRuleToPortInvalid
 		}
 	}
@@ -97,10 +97,10 @@ func (ev *Event) Validate() error {
 		if rule.Protocol == "" {
 			return ErrSGRuleProtocolInvalid
 		}
-		if rule.FromPort < 1 || rule.FromPort > 65535 {
+		if rule.FromPort < 0 || rule.FromPort > 65535 {
 			return ErrSGRuleFromPortInvalid
 		}
-		if rule.ToPort < 1 || rule.ToPort > 65535 {
+		if rule.ToPort < 0 || rule.ToPort > 65535 {
 			return ErrSGRuleToPortInvalid
 		}
 	}
