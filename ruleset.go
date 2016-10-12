@@ -46,8 +46,8 @@ func buildRevokePermissions(old, new []*ec2.IpPermission) []*ec2.IpPermission {
 }
 
 func deduplicateRules(rules, old []*ec2.IpPermission) []*ec2.IpPermission {
-	for i, rule := range rules {
-		if ruleExists(rule, old) {
+	for i := len(rules) - 1; i >= 0; i-- {
+		if ruleExists(rules[i], old) {
 			rules = append(rules[:i], rules[i+1:]...)
 		}
 	}
