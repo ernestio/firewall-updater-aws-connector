@@ -67,6 +67,48 @@ var (
 			IpProtocol: aws.String("tcp"),
 		},
 	}
+	testNewRulesetAddition = []*ec2.IpPermission{
+		&ec2.IpPermission{
+			IpRanges: []*ec2.IpRange{
+				&ec2.IpRange{
+					CidrIp: aws.String("10.0.10.100/32"),
+				},
+			},
+			FromPort:   aws.Int64(80),
+			ToPort:     aws.Int64(8080),
+			IpProtocol: aws.String("tcp"),
+		},
+		&ec2.IpPermission{
+			IpRanges: []*ec2.IpRange{
+				&ec2.IpRange{
+					CidrIp: aws.String("10.0.0.0/32"),
+				},
+			},
+			FromPort:   aws.Int64(1024),
+			ToPort:     aws.Int64(1024),
+			IpProtocol: aws.String("tcp"),
+		},
+		&ec2.IpPermission{
+			IpRanges: []*ec2.IpRange{
+				&ec2.IpRange{
+					CidrIp: aws.String("10.1.1.0/32"),
+				},
+			},
+			FromPort:   aws.Int64(99),
+			ToPort:     aws.Int64(99),
+			IpProtocol: aws.String("tcp"),
+		},
+		&ec2.IpPermission{
+			IpRanges: []*ec2.IpRange{
+				&ec2.IpRange{
+					CidrIp: aws.String("10.1.99.0/32"),
+				},
+			},
+			FromPort:   aws.Int64(11),
+			ToPort:     aws.Int64(11),
+			IpProtocol: aws.String("tcp"),
+		},
+	}
 )
 
 func TestRuleset(t *testing.T) {
@@ -97,12 +139,18 @@ func TestRuleset(t *testing.T) {
 			})
 		})
 
-		Convey("When deduplicating existing IpPermissions", func() {
+		Convey("When deduplicating existing IpPermissions when removing a rule", func() {
 			dedupeRuleset := deduplicateRules(testNewRuleset, testOldRuleset)
 			Convey("It should produce the correct output", func() {
 				So(len(dedupeRuleset), ShouldEqual, 0)
 			})
 		})
 
+		Convey("When deduplicating existing IpPermissions when adding a rule", func() {
+			dedupeRuleset := deduplicateRules(testNewRulesetAddition, testOldRuleset)
+			Convey("It should produce the correct output", func() {
+				So(len(dedupeRuleset), ShouldEqual, 1)
+			})
+		})
 	})
 }
