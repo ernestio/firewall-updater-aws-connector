@@ -34,6 +34,16 @@ var (
 			ToPort:     aws.Int64(1024),
 			IpProtocol: aws.String("tcp"),
 		},
+		&ec2.IpPermission{
+			IpRanges: []*ec2.IpRange{
+				&ec2.IpRange{
+					CidrIp: aws.String("10.1.1.0/32"),
+				},
+			},
+			FromPort:   aws.Int64(99),
+			ToPort:     aws.Int64(99),
+			IpProtocol: aws.String("tcp"),
+		},
 	}
 	testNewRuleset = []*ec2.IpPermission{
 		&ec2.IpPermission{
@@ -44,6 +54,58 @@ var (
 			},
 			FromPort:   aws.Int64(80),
 			ToPort:     aws.Int64(8080),
+			IpProtocol: aws.String("tcp"),
+		},
+		&ec2.IpPermission{
+			IpRanges: []*ec2.IpRange{
+				&ec2.IpRange{
+					CidrIp: aws.String("10.0.0.0/32"),
+				},
+			},
+			FromPort:   aws.Int64(1024),
+			ToPort:     aws.Int64(1024),
+			IpProtocol: aws.String("tcp"),
+		},
+	}
+	testNewRulesetAddition = []*ec2.IpPermission{
+		&ec2.IpPermission{
+			IpRanges: []*ec2.IpRange{
+				&ec2.IpRange{
+					CidrIp: aws.String("10.0.10.100/32"),
+				},
+			},
+			FromPort:   aws.Int64(80),
+			ToPort:     aws.Int64(8080),
+			IpProtocol: aws.String("tcp"),
+		},
+		&ec2.IpPermission{
+			IpRanges: []*ec2.IpRange{
+				&ec2.IpRange{
+					CidrIp: aws.String("10.0.0.0/32"),
+				},
+			},
+			FromPort:   aws.Int64(1024),
+			ToPort:     aws.Int64(1024),
+			IpProtocol: aws.String("tcp"),
+		},
+		&ec2.IpPermission{
+			IpRanges: []*ec2.IpRange{
+				&ec2.IpRange{
+					CidrIp: aws.String("10.1.1.0/32"),
+				},
+			},
+			FromPort:   aws.Int64(99),
+			ToPort:     aws.Int64(99),
+			IpProtocol: aws.String("tcp"),
+		},
+		&ec2.IpPermission{
+			IpRanges: []*ec2.IpRange{
+				&ec2.IpRange{
+					CidrIp: aws.String("10.1.99.0/32"),
+				},
+			},
+			FromPort:   aws.Int64(11),
+			ToPort:     aws.Int64(11),
 			IpProtocol: aws.String("tcp"),
 		},
 	}
@@ -69,20 +131,26 @@ func TestRuleset(t *testing.T) {
 			revokeRuleset := buildRevokePermissions(testOldRuleset, testNewRuleset)
 			Convey("It should produce the correct output", func() {
 				So(len(revokeRuleset), ShouldEqual, 1)
-				So(*revokeRuleset[0].FromPort, ShouldEqual, 1024)
-				So(*revokeRuleset[0].ToPort, ShouldEqual, 1024)
+				So(*revokeRuleset[0].FromPort, ShouldEqual, 99)
+				So(*revokeRuleset[0].ToPort, ShouldEqual, 99)
 				So(len(revokeRuleset[0].IpRanges), ShouldEqual, 1)
-				So(*revokeRuleset[0].IpRanges[0].CidrIp, ShouldEqual, "10.0.0.0/32")
+				So(*revokeRuleset[0].IpRanges[0].CidrIp, ShouldEqual, "10.1.1.0/32")
 				So(*revokeRuleset[0].IpProtocol, ShouldEqual, "tcp")
 			})
 		})
 
-		Convey("When deduplicating existing IpPermissions", func() {
+		Convey("When deduplicating existing IpPermissions when removing a rule", func() {
 			dedupeRuleset := deduplicateRules(testNewRuleset, testOldRuleset)
 			Convey("It should produce the correct output", func() {
 				So(len(dedupeRuleset), ShouldEqual, 0)
 			})
 		})
 
+		Convey("When deduplicating existing IpPermissions when adding a rule", func() {
+			dedupeRuleset := deduplicateRules(testNewRulesetAddition, testOldRuleset)
+			Convey("It should produce the correct output", func() {
+				So(len(dedupeRuleset), ShouldEqual, 1)
+			})
+		})
 	})
 }
