@@ -35,23 +35,23 @@ type Event struct {
 	UUID                  string `json:"_uuid"`
 	BatchID               string `json:"_batch_id"`
 	ProviderType          string `json:"_type"`
-	DatacenterVPCID       string `json:"datacenter_vpc_id"`
+	VPCID                 string `json:"vpc_id"`
 	DatacenterRegion      string `json:"datacenter_region"`
-	DatacenterAccessKey   string `json:"datacenter_access_key"`
-	DatacenterAccessToken string `json:"datacenter_access_token"`
+	DatacenterAccessKey   string `json:"datacenter_secret"`
+	DatacenterAccessToken string `json:"datacenter_token"`
 	NetworkAWSID          string `json:"network_aws_id"`
 	SecurityGroupAWSID    string `json:"security_group_aws_id,omitempty"`
-	SecurityGroupName     string `json:"security_group_name"`
+	SecurityGroupName     string `json:"name"`
 	SecurityGroupRules    struct {
 		Ingress []rule `json:"ingress"`
 		Egress  []rule `json:"egress"`
-	} `json:"security_group_rules"`
+	} `json:"rules"`
 	ErrorMessage string `json:"error,omitempty"`
 }
 
 // Validate checks if all criteria are met
 func (ev *Event) Validate() error {
-	if ev.DatacenterVPCID == "" {
+	if ev.VPCID == "" {
 		return ErrDatacenterIDInvalid
 	}
 
